@@ -1,3 +1,5 @@
+#ifndef __M_HTTP_H__
+#define __M_HTTP_H__
 #include <unordered_map>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
@@ -24,20 +26,21 @@ class HttpRequest
         }
         //2.判断是否包含整个头部/r/n/r/n
         size_t pos;
-        pos = tmp.find("/r/n/r/n", 0);
-        std::cout << "tmp:["<<tmp<<"]\n";
-        std::cout << "pos:["<<pos<<"]\n";
+        pos = tmp.find("\r\n\r\n", 0);
+        //std::cout << "tmp:["<<tmp<<"]\n";
+        //std::cout << "pos:["<<pos<<"]\n";
         //3.判断当前数据长度,
         if(pos == std::string::npos && tmp.size() == 8192)
         {
           return false;
-        }else if(pos != std::string::npos)
+        }
+        else if(pos != std::string::npos)
         {
           //4.若包含整个头部则,直接获取头部;
-          header.assign(tmp[0], pos);
+          header.assign(&tmp[0], pos);
           size_t header_length = pos + 4 ;
           sock.Recv(tmp ,header_length);
-          // std::cout << "header:["<< header<<"]\n";
+          //std::cout << "header:["<< header<<"]\n";
           return true;
         }
       }
@@ -45,8 +48,10 @@ class HttpRequest
     bool FirstLineParse(std::string &line)
     {
       //GET, HTTP /1.1
+      //首行的list
       std::vector<std::string> line_list;
       boost::split(line_list ,line, boost::is_any_of(" "), boost::token_compress_on);
+      //首行信息非3个,则报错
       if(line_list.size() != 3)
       {
         std::cerr << "parse first line error\n";
@@ -54,6 +59,7 @@ class HttpRequest
       }
      _method = line_list[0];
 
+     //url中找路径
      size_t pos = line_list[1].find("?" , 0);
      if(pos == std::string::npos)
      {
@@ -71,7 +77,7 @@ class HttpRequest
          param_pos = i.find("=");
          if(param_pos == std::string::npos)
          {
-           std::cerr<< "parse param error\n";
+           std::cerr << "parse param error\n";
            return false;
          }
          std::string key = i.substr(0,param_pos);
@@ -95,10 +101,10 @@ class HttpRequest
       //2.对整个头部按照\r\n进行分割--得到一个list
       std::vector<std::string> header_list;
       boost::split(header_list , header, boost::is_any_of("\r\n"), boost::token_compress_on);
-      /*for(int i = 0; i < header_list.size(); i++)
+      for(unsigned long i = 0; i < header_list.size(); i++)
       {
         std::cout << "list[i] = [" << header_list[i] << "]\n";
-      }*/
+      }
       //3.list[0] =----首行,进行首行解析
       if(FirstLineParse(header_list[0]) == false)
       {
@@ -122,20 +128,18 @@ class HttpRequest
       }
 
       //5.请求校验信息
-      /*
-         std::cout << "_method:["<< _mehod <<"]\n";
-         std::cout << "path:["<< _path << "]\n";
-         for(auto i : _param)
-         {
-         std::cout << i.first<< " = " << i.second << "\n";
-         for(auto i : _headers)
-         }
-         {
-         std::cout << i.first<< " = " << i.second << "\n";
-         }
+      
+        std::cout << "_method:["<< _method <<"]\n";
+        std::cout << "path:["<< _path << "]\n";
+        for(auto i : _param)
+        {
+        std::cout << i.first<< " = " << i.second << "\n";
+        }
+        for(auto i : _headers)
+        {
+        std::cout << i.first<< " = " << i.second << "\n";
+        }
 
-         std::cout << ":["<< _mehod <<"]\n";
-         }*/
       //6.接收正文信息
       auto it =_headers.find("Content-Length");
       if(it != _headers.end())
@@ -200,3 +204,4 @@ class HttpResponse
     }
 };
 
+#endif
