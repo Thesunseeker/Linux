@@ -69,6 +69,7 @@ class TcpSocket
         close(_sockfd);
         return false;
       }
+
       ret = listen(_sockfd , 10);
       if(ret < 0)
       {
@@ -104,7 +105,7 @@ class TcpSocket
         {
           return true;
         }
-        std::cerr <<"recv error\n";
+        std::cerr <<"recv peek error\n";
         return false;
       }
       buf.assign(tmp,ret);

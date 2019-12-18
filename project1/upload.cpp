@@ -149,7 +149,7 @@ bool BoundaryParse(std::string &body, std::vector<Boundary> &list)
 
 bool StorageFile(std::string &body , std::vector<Boundary> list)
 {
-  for(int i = 0 ; i < list.size() ; i++)
+  for(unsigned long i = 0 ; i < list.size() ; i++)
   {
     if(list[i]._name != "fileupload")
     {
@@ -175,6 +175,32 @@ bool StorageFile(std::string &body , std::vector<Boundary> list)
 
 int main(int argc, char *argv[] , char *env[])
 {
-  
+  for(int i = 0; env[i] != NULL ; i++)
+  {
+    std::cerr << "env[i]====["<< env[i] << "]\n";
+  }
+  std::string body;
+  char *cont_len = getenv("Content-Length");
+  if(cont_len != NULL)
+  {
+    std::stringstream tmp;
+    tmp << cont_len;
+    int64_t fsize;
+    tmp >> fsize;
+
+    //改为文件大小
+    body.resize(fsize);
+    int rlen = 0;
+    while(rlen < fsize)
+    {
+      int ret = read(0, &body[0] +  rlen, fsize - rlen);
+      if(ret <= 0)
+      {
+        exit(-1);
+      }
+      rlen += ret;
+    }
+    std::cerr<< "body:["<< body <<"]\n";
+  }
   return 0;
 }

@@ -24,11 +24,12 @@ class HttpRequest
         {
           return false;
         }
+        //std::cout<< "tmp:[" << tmp << "]\n";
         //2.判断是否包含整个头部/r/n/r/n
         size_t pos;
         pos = tmp.find("\r\n\r\n", 0);
-        //std::cout << "tmp:["<<tmp<<"]\n";
-        //std::cout << "pos:["<<pos<<"]\n";
+//        std::cout << "tmp:["<<tmp<<"]\n";
+        std::cout << "pos:["<<pos<<"]\n";
         //3.判断当前数据长度,
         if(pos == std::string::npos && tmp.size() == 8192)
         {
@@ -45,9 +46,11 @@ class HttpRequest
         }
       }
     } 
+
     bool FirstLineParse(std::string &line)
     {
       //GET, HTTP /1.1
+      //空格进行分割
       //首行的list
       std::vector<std::string> line_list;
       boost::split(line_list ,line, boost::is_any_of(" "), boost::token_compress_on);
@@ -89,7 +92,9 @@ class HttpRequest
     }
 
     bool PathIsLegal();
+
   public:
+
     int RequestParse(TcpSocket &sock)
     {
       //1.获取接收http头部 
@@ -119,16 +124,16 @@ class HttpRequest
         pos = header_list[i].find(": ");
         if(pos == std::string::npos)
         {
-          std::cerr<< "header parse error\n";
+          std::cerr << "header parse error\n";
           return false;
         }
         std::string key = header_list[i].substr(0,pos);
-        std::string val = header_list[i].substr(pos+1);
+        std::string val = header_list[i].substr(pos+2);
         _headers[key] = val;
       }
 
       //5.请求校验信息
-      
+    /*  
         std::cout << "_method:["<< _method <<"]\n";
         std::cout << "path:["<< _path << "]\n";
         for(auto i : _param)
@@ -139,7 +144,7 @@ class HttpRequest
         {
         std::cout << i.first<< " = " << i.second << "\n";
         }
-
+    */
       //6.接收正文信息
       auto it =_headers.find("Content-Length");
       if(it != _headers.end())
@@ -148,7 +153,7 @@ class HttpRequest
         tmp << it->second;
         //stringstread---将一个string对象转换成一个int64_t 类型的对象
         int64_t file_len;
-        tmp >>file_len;
+        tmp >> file_len;
         sock.Recv(_body, file_len);
       }
       return 200;
@@ -172,16 +177,19 @@ class HttpResponse
       }
       return "Unknow";
     }
+
   public:
-    bool SetHeader(const char* key , const char* val)
+    bool SetHeader(const std::string &key , const std::string &val)
     {
       _headers[key] = val;
       return true;
     }
+
     bool ErrorProcess(TcpSocket &sock)
     {
       return true;
     }
+
     bool NormalProcess(TcpSocket &sock)
     {
       std::stringstream tmp;
@@ -190,6 +198,7 @@ class HttpResponse
       tmp << "\r\n";
       if(_headers.find("Content-Length") == _headers.end())
       {
+        //没有找到则自己添加一个Content-Length
         std::string len = std::to_string(_body.size());
         _headers["Content-Length"] =len;
       }
@@ -197,6 +206,7 @@ class HttpResponse
       {
         tmp << i.first<< ": " << i.second << "\r\n";
       }
+      //空行
       tmp << "\r\n";
       sock.Send(tmp.str());
       sock.Send(_body);

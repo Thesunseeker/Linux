@@ -7,7 +7,7 @@
 #include <vector>
 #include <sys/epoll.h>
 
-#define MAX_EPOLL 1024
+#define MAX_EPOLL 4096 
 
 class Epoll 
 {
@@ -21,7 +21,7 @@ class Epoll
     bool Init()
     {
       _epfd = epoll_create(MAX_EPOLL);
-      if(_epfd <0 )
+      if(_epfd < 0 )
       {
         std::cerr << "create epoll error\n";
         return false;
@@ -32,7 +32,7 @@ class Epoll
     {
       struct epoll_event ev;
       int fd = sock.GetFd();
-      ev.events = EPOLLIN | EPOLLET;
+      ev.events = EPOLLIN ;
       ev.data.fd = fd;
       int ret = epoll_ctl(_epfd , EPOLL_CTL_ADD , fd ,&ev);
       if(ret < 0)
@@ -54,7 +54,7 @@ class Epoll
       }
       return true;
     }
-    bool Wait(std::vector<TcpSocket> &list , int timeout = 3000)
+    bool Wait(std::vector<TcpSocket> &list , int timeout = 10000)
     {
       struct epoll_event evs[MAX_EPOLL];
       int nfds = epoll_wait(_epfd , evs , MAX_EPOLL , timeout);
